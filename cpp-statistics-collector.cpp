@@ -7,16 +7,15 @@
 
 #include "cpp-statistics-collector.hpp"
 
-C_CppFilesStatisticsCollector::C_CppFilesStatisticsCollector(const std::string& path_to_directory)
+CppFilesStatisticsCollector::CppFilesStatisticsCollector(const std::string& path_to_directory)
 : kRootDirectory{ path_to_directory },
   processed_files{ 0 }
 {
   
 }
 
-AnalysisResult C_CppFilesStatisticsCollector::Collect() {
+AnalysisResult CppFilesStatisticsCollector::Collect() {
   AnalysisResult result{
-    .total_lines = 0,
     .blank_lines = 0,
     .code_lines = 0,
     .comment_lines = 0
@@ -43,13 +42,12 @@ AnalysisResult C_CppFilesStatisticsCollector::Collect() {
       std::string* path;
       
       while (queue.pop(path)) {
-        const auto file_content = FileReader::ReadFile(*path);
+        StaticAnalyzer analyzer{ *path };
         
-        const auto stats = StaticAnalyzer::Analyze(file_content);
+        const auto stats = analyzer.Analyze();
         
         delete path;
         path = nullptr;
-        
         
         mutex.lock();
         processed_files++;
@@ -61,12 +59,12 @@ AnalysisResult C_CppFilesStatisticsCollector::Collect() {
   
   pool.join();
   
-  this->stats = result;
+  statistics = result;
   return result;
 }
 
-std::ostream& C_CppFilesStatisticsCollector::PrintStats(std::ostream& os) {
+std::ostream& CppFilesStatisticsCollector::PrintStats(std::ostream& os) {
   os << "Total files processed: " << processed_files << std::endl;
-  os << stats.value() << std::endl;
+  os << statistics.value() << std::endl;
   return os;
 }

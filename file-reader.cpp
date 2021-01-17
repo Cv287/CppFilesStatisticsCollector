@@ -9,24 +9,32 @@
 
 using namespace std;
 
-auto FileReader::ReadFile(const string& filepath) -> vector<string> {
-  vector<string> lines;
-  ifstream file;
+FileReader::FileReader(const std::string& path)
+: kFilePath{ path }
+{
+  
+}
 
-  file.open(filepath, ios::in);
+void FileReader::OpenFile() {
+  file.open(kFilePath, ios::in);
   if (!file) {
-    cerr << filepath << " not created!" << endl;
+    cerr << kFilePath << " not created!" << endl;
   }
+}
 
-  while (true) {
+void FileReader::CloseFile() {
+  file.close();
+}
+
+bool FileReader::Eof() const {
+  return file.eof();
+}
+
+std::string FileReader::ReadNextLine() {
+  if (!file.eof()) {
     string line;
     getline(file, line, '\n');
-    lines.push_back(line);
-    if (file.eof()) {
-      break;
-    }
+    return line;
   }
-
-  file.close();
-  return lines;
+  throw runtime_error{ "Attempt to read from file on EOF" };
 }

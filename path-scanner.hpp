@@ -17,16 +17,22 @@
 using _VectorString = std::vector<std::string>;
 
 class RecursivePathScanner {
-  // Path of file which has to be investigated
+  // Path of directory for scanning
   const std::string kPath;
   // Vector of file extensions to be processed
   const _VectorString kExtensions;
   
 private:
+  /* Checks if extension is in kExtensions vector. */
   bool IsValidExtension(const std::string& extension) const;
   
 public:
+  /* Constructor, has 2 parameters:
+      1. path to main directory where scanning is started;
+      2. vector of file extensions
+   Files with appropriate extensions will be processed by GetPaths(). */
   RecursivePathScanner(const std::string& path, const _VectorString file_extensions);
+  /* Returns list of files in kPath with extensions in kExtensions */
   _VectorString GetPaths() const;
 };
 

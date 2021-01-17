@@ -7,12 +7,15 @@
 
 #include "static-analyzer.hpp"
 
-//  BLANK LINE examples: "", " ", "\t", " \t"
-//  COMMENT
+using namespace std;
+
 //
+//  Utility functions
 //
 
-using namespace std;
+void Ltrim(std::string &s);
+void Rtrim(std::string &s);
+void Trim(const std::string& str);
 
 // trim from start (in place)
 void Ltrim(std::string &s) {
@@ -34,27 +37,24 @@ void Trim(std::string &s) {
     Rtrim(s);
 }
 
-AnalysisResult& AnalysisResult::operator+=(const AnalysisResult& other) {
-  total_lines += other.total_lines;
-  blank_lines += other.blank_lines;
-  comment_lines += other.comment_lines;
-  code_lines += other.code_lines;
-  return *this;
+//
+//  Class implementation
+//
+
+StaticAnalyzer::StaticAnalyzer(const std::string& path) : FileReader{ path } {
+  
 }
 
-ostream& operator<<(ostream& os, const AnalysisResult& ar) {
-  return os << "Total lines: " << ar.total_lines << endl
-            << "Blank lines: " << ar.blank_lines << endl
-            << "Comment lines: " << ar.comment_lines << endl
-            << "Source code lines: " << ar.code_lines;
-}
-
-auto StaticAnalyzer::Analyze(_VectorString file_content) -> AnalysisResult {
+auto StaticAnalyzer::Analyze() -> AnalysisResult {
   AnalysisResult result{
-    .total_lines = file_content.size()
+    .code_lines = 0,
+    .comment_lines = 0,
+    .blank_lines = 0
   };
   
-  for (const auto& line : file_content) {
+  OpenFile();
+  
+  for (auto line = ReadNextLine(); !Eof(); line = ReadNextLine()) {
     string trimmed{ line };
     Trim(trimmed);
     
@@ -65,14 +65,38 @@ auto StaticAnalyzer::Analyze(_VectorString file_content) -> AnalysisResult {
       result.comment_lines++;
     }
     else if (trimmed[0] == '/' && trimmed[1] == '*') {
+      bool first = true;
+      
       do {
         result.comment_lines++;
-      } while (trimmed.find("*/") != string::npos);
+        if (!first) {
+          trimmed = ReadNextLine();
+          Trim(trimmed);
+        }
+        first = false;
+      } while (trimmed.rfind("*/") == string::npos);
     }
     else {
       result.code_lines++;
     }
   }
   
+  CloseFile();
+  
   return result;
+}
+
+AnalysisResult& AnalysisResult::operator+=(const AnalysisResult& other) {
+  blank_lines += other.blank_lines;
+  comment_lines += other.comment_lines;
+  code_lines += other.code_lines;
+  return *this;
+}
+
+ostream& operator<<(ostream& os, const AnalysisResult& ar) {
+  const auto total_lines = ar.blank_lines + ar.code_lines + ar.comment_lines;
+  return os << "Total lines: " << total_lines << endl
+            << "Blank lines: " << ar.blank_lines << endl
+            << "Comment lines: " << ar.comment_lines << endl
+            << "Source code lines: " << ar.code_lines;
 }
